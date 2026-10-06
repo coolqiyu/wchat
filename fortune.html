@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a1140" />
+  <title>今日运势 · 抽签</title>
+  <style>
+    /* ===================== 全局基调 ===================== */
+    :root {
+      --gold: #f7c948;
+      --gold-soft: #ffe7a3;
+      --purple: #6d4bd8;
+      --purple-deep: #3a2270;
+      --blue-deep: #1a1140;
+      --blue-soft: #2a1d63;
+      --text: #fdf6e3;
+      --text-dim: #d9cdf5;
+      --card: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.18);
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(120% 90% at 50% -10%, #3a2270 0%, #1a1140 45%, #0d0826 100%);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+      line-height: 1.6;
+    }
+
+    /* 背景流光与星点 */
+    .bg-glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.55;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .bg-glow.a { width: 320px; height: 320px; background: #6d4bd8; top: -80px; left: -60px; animation: float1 9s ease-in-out infinite; }
+    .bg-glow.b { width: 280px; height: 280px; background: #c79a2e; bottom: -70px; right: -50px; animation: float2 11s ease-in-out infinite; }
+    .bg-glow.c { width: 220px; height: 220px; background: #2f6df0; top: 40%; right: -70px; opacity: 0.4; animation: float1 13s ease-in-out infinite; }
+
+    @keyframes float1 { 0%,100% { transform: translateY(0) translateX(0); } 50% { transform: translateY(30px) translateX(20px); } }
+    @keyframes float2 { 0%,100% { transform: translateY(0) translateX(0); } 50% { transform: translateY(-26px) translateX(-18px); } }
+
+    .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .star {
+      position: absolute;
+      width: 4px; height: 4px;
+      background: var(--gold-soft);
+      border-radius: 50%;
+      opacity: 0.7;
+      animation: twinkle 3s ease-in-out infinite;
+    }
+    @keyframes twinkle { 0%,100% { opacity: 0.15; transform: scale(0.6); } 50% { opacity: 0.9; transform: scale(1.2); } }
+
+    /* ===================== 布局容器 ===================== */
+    #app {
+      position: relative;
+      z-index: 2;
+      width: min(440px, 92vw);
+      min-height: 78vh;
+      background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 30px 24px 34px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .screen { width: 100%; display: none; flex-direction: column; align-items: center; animation: fadeIn 0.5s ease both; }
+    .screen.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===================== 开场页 ===================== */
+    .kicker {
+      font-size: 13px; letter-spacing: 6px; color: var(--gold-soft);
+      opacity: 0.9; margin-top: 6px;
+    }
+    .title {
+      font-size: 40px; font-weight: 800; letter-spacing: 4px;
+      margin: 14px 0 6px;
+      background: linear-gradient(120deg, #ffe7a3, #f7c948 40%, #c79a2e);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      text-shadow: 0 2px 20px rgba(247,201,72,0.25);
+    }
+    .subtitle { font-size: 15px; color: var(--text-dim); max-width: 280px; margin: 4px auto 26px; }
+
+    .orb {
+      width: 150px; height: 150px; border-radius: 50%;
+      margin: 10px auto 26px;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255,255,255,0.5), rgba(255,255,255,0) 40%),
+        radial-gradient(circle at 50% 50%, #8a5cf0, #4a2c9e 70%, #2a1d63);
+      box-shadow: 0 0 0 8px rgba(247,201,72,0.12), 0 0 50px rgba(138,92,240,0.5), inset 0 0 30px rgba(0,0,0,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 64px; animation: breathe 4s ease-in-out infinite;
+    }
+    @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+
+    .btn {
+      appearance: none; border: none; cursor: pointer;
+      font-family: inherit; font-weight: 700; color: #2a1d63;
+      background: linear-gradient(120deg, #ffe7a3, #f7c948 55%, #e0a92e);
+      padding: 16px 46px; font-size: 19px; letter-spacing: 3px;
+      border-radius: 999px;
+      box-shadow: 0 10px 28px rgba(247,201,72,0.4), inset 0 1px 0 rgba(255,255,255,0.6);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      position: relative; overflow: hidden;
+    }
+    .btn:active { transform: scale(0.96); box-shadow: 0 6px 18px rgba(247,201,72,0.35); }
+    .btn::after {
+      content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.7), transparent);
+      transform: skewX(-20deg); animation: sheen 3.2s ease-in-out infinite;
+    }
+    @keyframes sheen { 0% { left: -60%; } 60%,100% { left: 130%; } }
+
+    .hint { font-size: 12px; color: var(--text-dim); opacity: 0.75; margin-top: 18px; }
+
+    /* ===================== 抽签动画 ===================== */
+    #drawing { justify-content: center; gap: 26px; min-height: 60vh; }
+    .tube-wrap { position: relative; width: 160px; height: 220px; display: flex; align-items: flex-end; justify-content: center; }
+    .tube {
+      width: 92px; height: 150px;
+      background: linear-gradient(180deg, #c79a2e, #8a5a14);
+      border-radius: 14px 14px 18px 18px;
+      position: relative; border: 3px solid #5e3d0c;
+      box-shadow: inset 0 6px 14px rgba(0,0,0,0.35), 0 10px 24px rgba(0,0,0,0.4);
+      transform-origin: 50% 100%;
+      animation: shake 0.5s ease-in-out infinite;
+    }
+    .tube::before {
+      content: ""; position: absolute; top: -12px; left: -3px; right: -3px; height: 16px;
+      background: linear-gradient(180deg, #e0a92e, #8a5a14); border-radius: 12px 12px 4px 4px; border: 3px solid #5e3d0c;
+    }
+    .tube .stripe { position: absolute; left: 50%; top: 50%; width: 70px; height: 14px; transform: translate(-50%,-50%) rotate(-8deg); background: rgba(94,61,12,0.6); border-radius: 4px; }
+    @keyframes shake { 0%,100% { transform: rotate(-9deg); } 50% { transform: rotate(9deg); } }
+
+    .stick {
+      position: absolute; bottom: 60px; left: 50%; width: 10px; height: 120px;
+      background: linear-gradient(180deg, #fff4d6, #f1d79a); border-radius: 6px;
+      transform: translateX(-50%) translateY(40px) rotate(0deg); opacity: 0;
+      box-shadow: 0 0 12px rgba(255,231,163,0.8);
+    }
+    .stick.pop { animation: stickPop 1s ease forwards; }
+    @keyframes stickPop {
+      0% { opacity: 0; transform: translateX(-50%) translateY(40px) rotate(0deg); }
+      35% { opacity: 1; transform: translateX(-50%) translateY(-30px) rotate(-6deg); }
+      70% { opacity: 1; transform: translateX(-50%) translateY(-46px) rotate(6deg); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-120px) rotate(0deg) scale(0.9); }
+    }
+
+    .draw-text { font-size: 16px; color: var(--gold-soft); letter-spacing: 2px; }
+    .draw-text .dots::after { content: ""; animation: dots 1.2s steps(4,end) infinite; }
+    @keyframes dots { 0% { content: ""; } 25% { content: "·"; } 50% { content: "··"; } 75% { content: "···"; } 100% { content: ""; } }
+
+    /* ===================== 结果页 ===================== */
+    .result-emoji { font-size: 56px; line-height: 1; margin-top: 4px; filter: drop-shadow(0 4px 14px rgba(247,201,72,0.4)); }
+    .result-level {
+      font-size: 34px; font-weight: 800; letter-spacing: 6px; margin: 8px 0 2px;
+    }
+    .result-tagline { font-size: 13px; color: var(--gold-soft); letter-spacing: 2px; margin-bottom: 16px; }
+
+    .main-quote {
+      font-size: 16px; line-height: 1.8; color: var(--text);
+      background: var(--card); border: 1px solid var(--card-border); border-radius: 16px;
+      padding: 14px 16px; margin: 4px 0 18px; position: relative;
+    }
+    .main-quote::before { content: "“"; position: absolute; top: -6px; left: 10px; font-size: 34px; color: var(--gold); opacity: 0.6; }
+
+    .dims { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .dim {
+      background: var(--card); border: 1px solid var(--card-border); border-radius: 14px;
+      padding: 10px 12px; text-align: left;
+    }
+    .dim .dim-head { display: flex; justify-content: space-between; align-items: center; }
+    .dim .dim-name { font-size: 14px; font-weight: 700; color: var(--gold-soft); }
+    .dim .dim-stars { font-size: 13px; letter-spacing: 1px; }
+    .dim .dim-comment { font-size: 12px; color: var(--text-dim); margin-top: 5px; line-height: 1.5; }
+
+    .extras { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .extra-row {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; padding: 9px 14px;
+      font-size: 13px;
+    }
+    .extra-row .e-label { color: var(--gold-soft); font-weight: 700; min-width: 64px; text-align: left; letter-spacing: 1px; }
+    .extra-row .e-value { color: var(--text); flex: 1; text-align: left; }
+    .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin-right: 6px; border: 1px solid rgba(255,255,255,0.4); }
+
+    .actions { width: 100%; display: flex; gap: 12px; }
+    .btn.ghost {
+      background: var(--card); color: var(--gold-soft); border: 1px solid var(--card-border);
+      box-shadow: none; flex: 1; padding: 14px 0; font-size: 16px;
+    }
+    .btn.primary { flex: 1.3; padding: 14px 0; font-size: 16px; }
+
+    /* ===================== Toast ===================== */
+    #toast {
+      position: fixed; left: 50%; bottom: 8%; transform: translateX(-50%) translateY(20px);
+      background: rgba(20,12,45,0.92); color: var(--gold-soft);
+      border: 1px solid var(--card-border); padding: 12px 22px; border-radius: 999px;
+      font-size: 14px; letter-spacing: 1px; z-index: 50; opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease; box-shadow: var(--shadow);
+      max-width: 86vw; text-align: center;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 360px) {
+      .title { font-size: 34px; }
+      #app { padding: 26px 18px 30px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow a"></div>
+  <div class="bg-glow b"></div>
+  <div class="bg-glow c"></div>
+  <div class="stars" id="stars"></div>
+
+  <main id="app">
+    <!-- 开场页 -->
+    <section class="screen active" id="intro">
+      <div class="kicker">FORTUNE · 今日</div>
+      <h1 class="title">今日运势</h1>
+      <p class="subtitle">心诚则灵 ✦ 轻轻一摇，接住属于你的今日好运</p>
+      <div class="orb">🔮</div>
+      <button class="btn" id="drawBtn">抽 签</button>
+      <p class="hint">整页皆可点 · 好运不期而遇</p>
+    </section>
+
+    <!-- 抽签动画 -->
+    <section class="screen" id="drawing">
+      <div class="tube-wrap">
+        <div class="tube"><div class="stripe"></div></div>
+        <div class="stick" id="stick"></div>
+      </div>
+      <div class="draw-text">佛系摇签中<span class="dots"></span></div>
+    </section>
+
+    <!-- 结果页 -->
+    <section class="screen" id="result">
+      <div class="result-emoji" id="rEmoji">🎉</div>
+      <div class="result-level" id="rLevel">大吉</div>
+      <div class="result-tagline" id="rTagline">紫气东来，万事顺遂</div>
+
+      <div class="main-quote" id="rQuote"></div>
+
+      <div class="dims" id="rDims"></div>
+
+      <div class="extras">
+        <div class="extra-row"><span class="e-label">幸运数字</span><span class="e-value" id="rNumber"></span></div>
+        <div class="extra-row"><span class="e-label">幸运色</span><span class="e-value" id="rColor"></span></div>
+        <div class="extra-row"><span class="e-label">今日宜</span><span class="e-value" id="rYi"></span></div>
+        <div class="extra-row"><span class="e-label">今日忌</span><span class="e-value" id="rJi"></span></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="againBtn">再抽一次</button>
+        <button class="btn ghost" id="shareBtn">分享好运</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast"></div>
+
+  <script>
+    "use strict";
+
+    /* ===================== 文案库 ===================== */
+    // 总评等级（玄学风 + 永远积极）
+    const RATINGS = [
+      { name: "大吉", emoji: "🎉", tagline: "紫气东来，万事顺遂", weight: 25,
+        color: "#f7c948", glow: "rgba(247,201,72,0.45)" },
+      { name: "吉", emoji: "🌟", tagline: "吉星高照，喜事将近", weight: 35,
+        color: "#9be15d", glow: "rgba(155,225,93,0.4)" },
+      { name: "中吉", emoji: "🍀", tagline: "平稳向好，静待花开", weight: 25,
+        color: "#6dd5ed", glow: "rgba(109,213,237,0.4)" },
+      { name: "小吉", emoji: "🌈", tagline: "小确幸不断，温柔相伴", weight: 15,
+        color: "#f78fb3", glow: "rgba(247,143,179,0.4)" }
+    ];
+
+    // 主好运文案（鸡汤 + 玄学混合，治愈向）
+    const QUOTES = [
+      "今日的风都带着善意，你只需带着微笑往前走，好运自会循着光找到你。",
+      "宇宙悄悄为你排好了队，今天遇到的每件事，都是温柔的铺垫。",
+      "你本就是一颗会发光的小星球，今天，允许自己被更多人看见。",
+      "心若向阳，无畏风霜。今天的你比昨天更靠近想要的生活一点点。",
+      "缘分与机遇正在路上小跑而来，记得保持心跳，接住这份惊喜。",
+      "星光不问赶路人，时光不负有心人。你种下的善意，今天开始发芽。",
+      "今天适合被爱，也适合爱人。把心打开一条缝，光就进来了。",
+      "运势是温柔的提醒：你值得一切美好，今天尤其值得。",
+      "所有的等待都有回音，今天的你，正站在好运的入口处。",
+      "深呼吸，今天的气场很旺，开口说的每句话都会变成好消息。",
+      "你不必完美，今天的运气偏爱真实又努力的你。",
+      "好运像猫，你越放松它越靠近。今天，做一只慵懒又幸运的猫吧。"
+    ];
+
+    // 多维度点评模板（每个维度一组积极点评，运行时随机取）
+    const DIM_COMMENTS = {
+      "综合": [
+        "整体气场和谐，诸事皆有小惊喜。",
+        "今日运势上扬，节奏刚刚好。",
+        "能量饱满，做事顺风顺水。",
+        "贵人运在线，处处遇良机。"
+      ],
+      "爱情": [
+        "桃花温柔，单身者易遇心动信号。",
+        "亲密关系升温，一句关心就够甜。",
+        "魅力值拉满，你的真诚最动人。",
+        "今天适合表达爱，心意会被收到。"
+      ],
+      "事业": [
+        "思路清晰，难题迎刃而解。",
+        "努力被看见，或有意外认可。",
+        "合作顺畅，团队助你一臂之力。",
+        "灵感来袭，适合开启新计划。"
+      ],
+      "财运": [
+        "正财稳健，小确幸的红包在路。",
+        "消费理智，钱花在刀刃上。",
+        "偏财微动，留意身边的好机会。",
+        "今日宜规划，财富悄悄积累中。"
+      ],
+      "健康": [
+        "精力充沛，适合散步与早睡。",
+        "身心轻盈，情绪像被治愈过。",
+        "元气满满，记得多喝水多微笑。",
+        "状态回血，今天对自己好一点。"
+      ],
+      "人际": [
+        "人缘走高，旧友新朋都暖心。",
+        "沟通顺畅，误会轻松化解。",
+        "你散发的善意会被温柔回应。",
+        "今天适合聚会，笑声带来好运。"
+      ]
+    };
+
+    const DIM_NAMES = ["综合", "爱情", "事业", "财运", "健康", "人际"];
+
+    // 玄学彩蛋
+    const LUCKY_COLORS = [
+      { name: "暖金", hex: "#f7c948" },
+      { name: "黛紫", hex: "#6d4bd8" },
+      { name: "天青", hex: "#6dd5ed" },
+      { name: "蜜桃粉", hex: "#f78fb3" },
+      { name: "薄荷绿", hex: "#9be15d" },
+      { name: "落日橙", hex: "#ff9a56" },
+      { name: "月白", hex: "#eef2ff" },
+      { name: "胭脂红", hex: "#e85a71" }
+    ];
+
+    const YI_LIST = [
+      "表白", "早睡", "拥抱", "微笑", "给家人打电话", "尝试新事物",
+      "好好吃饭", "记录开心", "主动邀约", "晒晒太阳", "写下愿望", "原谅自己"
+    ];
+
+    // 今日忌：用积极/中性方式引导远离内耗（避免负面恐吓）
+    const JI_LIST = [
+      "熬夜", "内耗", "自我怀疑", "拖延", "抱怨", "过度比较",
+      "紧绷神经", "憋着情绪", "勉强自己", "钻牛角尖", "emo", "苛责他人"
+    ];
+
+    /* ===================== 工具函数 ===================== */
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+    // 加权随机
+    function weightedPick(items) {
+      const total = items.reduce((s, it) => s + (it.weight || 1), 0);
+      let r = Math.random() * total;
+      for (const it of items) {
+        r -= (it.weight || 1);
+        if (r <= 0) return it;
+      }
+      return items[items.length - 1];
+    }
+    // 星级：偏向 4~5 星（说好话），0~1 星权重为 0 永不出现
+    function rollStars() {
+      const weights = [0, 0, 0.10, 0.25, 0.25, 0.40]; // 索引即星数 0..5，长度 6
+      const r = Math.random();
+      let acc = 0;
+      for (let s = 0; s <= 5; s++) {
+        acc += weights[s];
+        if (r <= acc) return s;
+      }
+      return 5;
+    }
+    function starsStr(n) {
+      const full = "⭐".repeat(n);
+      const empty = "☆".repeat(5 - n);
+      return full + empty;
+    }
+
+    /* ===================== 生成结果 ===================== */
+    function buildResult() {
+      const rating = weightedPick(RATINGS);
+      const quote = pick(QUOTES);
+
+      const dims = DIM_NAMES.map(function (name) {
+        const stars = rollStars();
+        const comment = pick(DIM_COMMENTS[name]);
+        return { name: name, stars: stars, comment: comment };
+      });
+
+      // 综合维度星数与总评呼应（不低于总评观感）
+      const color = pick(LUCKY_COLORS);
+      const number = randInt(1, 99);
+      const yi = pick(YI_LIST);
+      const ji = pick(JI_LIST);
+
+      return {
+        rating: rating,
+        quote: quote,
+        dims: dims,
+        lucky: { number: number, color: color, yi: yi, ji: ji }
+      };
+    }
+
+    /* ===================== 渲染结果 ===================== */
+    const $ = function (id) { return document.getElementById(id); };
+
+    function renderResult(data) {
+      $("rEmoji").textContent = data.rating.emoji;
+      $("rLevel").textContent = data.rating.name;
+      $("rLevel").style.color = data.rating.color;
+      $("rLevel").style.textShadow = "0 0 22px " + data.rating.glow;
+      $("rTagline").textContent = data.rating.tagline;
+      $("rQuote").textContent = data.quote;
+
+      // 维度
+      const wrap = $("rDims");
+      wrap.innerHTML = "";
+      data.dims.forEach(function (d) {
+        const el = document.createElement("div");
+        el.className = "dim";
+        el.innerHTML =
+          '<div class="dim-head">' +
+            '<span class="dim-name">' + d.name + '</span>' +
+            '<span class="dim-stars">' + starsStr(d.stars) + '</span>' +
+          '</div>' +
+          '<div class="dim-comment">' + d.comment + '</div>';
+        wrap.appendChild(el);
+      });
+
+      // 彩蛋
+      $("rNumber").textContent = data.lucky.number;
+      $("rColor").innerHTML =
+        '<span class="swatch" style="background:' + data.lucky.color.hex + '"></span>' +
+        data.lucky.color.name;
+      $("rYi").textContent = yiText(data.lucky.yi);
+      $("rJi").textContent = jiText(data.lucky.ji);
+    }
+
+    function yiText(v) { return "宜" + v + " · 顺势而为，好事自然来"; }
+    function jiText(v) { return "忌" + v + " · 把能量留给值得的事"; }
+
+    /* ===================== 界面流转 ===================== */
+    function showScreen(id) {
+      const screens = document.querySelectorAll(".screen");
+      screens.forEach(function (s) { s.classList.remove("active"); });
+      $(id).classList.add("active");
+    }
+
+    let drawing = false;
+
+    function startDraw() {
+      if (drawing) return;
+      drawing = true;
+      showScreen("drawing");
+      const stick = $("stick");
+      stick.classList.remove("pop");
+      // 触发重排以重启动画
+      void stick.offsetWidth;
+      stick.classList.add("pop");
+
+      const duration = randInt(900, 1400);
+      setTimeout(function () {
+        const data = buildResult();
+        renderResult(data);
+        showScreen("result");
+        drawing = false;
+      }, duration);
+    }
+
+    /* ===================== 分享（复制链接 + 兜底） ===================== */
+    function showToast(msg) {
+      const t = $("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(function () {
+        t.classList.remove("show");
+      }, 2200);
+    }
+
+    async function shareFortune() {
+      const url = window.location.href;
+      let ok = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+          ok = true;
+        } else {
+          throw new Error("no clipboard api");
+        }
+      } catch (e) {
+        // 兜底：execCommand
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = url;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.top = "-9999px";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          const done = document.execCommand("copy");
+          document.body.removeChild(ta);
+          ok = done;
+        } catch (err) {
+          ok = false;
+        }
+      }
+      if (ok) {
+        showToast("链接已复制，去分享好运吧 ✨");
+      } else {
+        // 最终兜底
+        showToast("复制失败，请长按地址栏手动复制分享 🔗");
+      }
+    }
+
+    /* ===================== 背景星点 ===================== */
+    function makeStars() {
+      const box = $("stars");
+      const n = 36;
+      let html = "";
+      for (let i = 0; i < n; i++) {
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        const d = (Math.random() * 3 + 1.5).toFixed(1);
+        const delay = (Math.random() * 3).toFixed(1);
+        html += '<span class="star" style="left:' + x + '%;top:' + y + '%;animation-duration:' + d + 's;animation-delay:' + delay + 's;"></span>';
+      }
+      box.innerHTML = html;
+    }
+
+    /* ===================== 事件绑定 ===================== */
+    function bindEvents() {
+      // 抽签按钮 + 整页可点（开场页）
+      $("drawBtn").addEventListener("click", startDraw);
+      $("intro").addEventListener("click", function (e) {
+        // 按钮自身已绑定，避免重复触发
+        if (e.target.id === "drawBtn") return;
+        startDraw();
+      });
+
+      $("againBtn").addEventListener("click", startDraw);
+      $("shareBtn").addEventListener("click", shareFortune);
+    }
+
+    /* ===================== 初始化 ===================== */
+    function init() {
+      makeStars();
+      bindEvents();
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
